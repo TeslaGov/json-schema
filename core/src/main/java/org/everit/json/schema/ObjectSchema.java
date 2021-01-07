@@ -39,6 +39,8 @@ public class ObjectSchema extends Schema {
 
         private boolean requiresObject = true;
 
+        private final Map<String, Schema> definitionSchemas = new HashMap<>();
+
         private final Map<String, Schema> propertySchemas = new HashMap<>();
 
         private boolean additionalProperties = true;
@@ -65,6 +67,22 @@ public class ObjectSchema extends Schema {
 
         public Builder additionalProperties(boolean additionalProperties) {
             this.additionalProperties = additionalProperties;
+            return this;
+        }
+
+        /**
+         * Adds a definition schema.
+         *
+         * @param definitionName
+         *         the name of the definition
+         * @param schema
+         *         the definition of the {@code schema}
+         * @return {@code this}
+         */
+        public Builder addDefinitionSchema(String definitionName, Schema schema) {
+            requireNonNull(definitionName, "definitionName cannot be null");
+            requireNonNull(schema, "schema cannot be null");
+            definitionSchemas.put(definitionName, schema);
             return this;
         }
 
@@ -172,6 +190,8 @@ public class ObjectSchema extends Schema {
         return Collections.unmodifiableMap(new HashMap<>(original));
     }
 
+    private final Map<String, Schema> definitionSchemas;
+
     private final Map<String, Schema> propertySchemas;
 
     private final boolean additionalProperties;
@@ -202,8 +222,10 @@ public class ObjectSchema extends Schema {
      */
     public ObjectSchema(Builder builder) {
         super(builder);
+        this.definitionSchemas = builder.definitionSchemas == null ? null
+                : Collections.unmodifiableMap(builder.definitionSchemas);
         this.propertySchemas = builder.propertySchemas == null ? null
-                : Collections.unmodifiableMap(builder.propertySchemas);
+            : Collections.unmodifiableMap(builder.propertySchemas);
         this.additionalProperties = builder.additionalProperties;
         this.schemaOfAdditionalProperties = builder.schemaOfAdditionalProperties;
         if (!additionalProperties && schemaOfAdditionalProperties != null) {
@@ -245,6 +267,10 @@ public class ObjectSchema extends Schema {
 
     public Map<String, Set<String>> getPropertyDependencies() {
         return propertyDependencies;
+    }
+
+    public Map<String, Schema> getDefinitionSchemas() {
+        return definitionSchemas;
     }
 
     public Map<String, Schema> getPropertySchemas() {
@@ -343,6 +369,7 @@ public class ObjectSchema extends Schema {
             return that.canEqual(this) &&
                     additionalProperties == that.additionalProperties &&
                     requiresObject == that.requiresObject &&
+                    Objects.equals(definitionSchemas, that.definitionSchemas) &&
                     Objects.equals(propertySchemas, that.propertySchemas) &&
                     Objects.equals(schemaOfAdditionalProperties, that.schemaOfAdditionalProperties) &&
                     Objects.equals(requiredProperties, that.requiredProperties) &&
@@ -360,7 +387,7 @@ public class ObjectSchema extends Schema {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), propertySchemas, propertyNameSchema, additionalProperties, schemaOfAdditionalProperties,
+        return Objects.hash(super.hashCode(), definitionSchemas, propertySchemas, propertyNameSchema, additionalProperties, schemaOfAdditionalProperties,
                 requiredProperties,
                 minProperties, maxProperties, propertyDependencies, schemaDependencies, requiresObject, patternProperties);
     }
